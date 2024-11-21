@@ -1,0 +1,53 @@
+name: start test and deploy
+
+on:
+  push:
+    branches: [deploy]
+
+jobs:
+  deploy:
+    name: deploy to server
+    runs-on: self-hosted
+    # timeout-minutes: 1
+    # needs: test
+    steps:
+#      - name: kill next server
+#        continue-on-error: true
+#        run: sudo fuser -k 80/tcp
+#      - name: checkout branch
+#        run: cd /home/habe/yokai-ui/ && git checkout deploy
+#      - name: reset
+#        run: cd /home/habe/yokai-ui/ && sudo chmod -R 777 . && git reset --hard
+#      - name: git pull
+#        run: cd /home/habe/yokai-ui/ && git pull --allow-unrelated-histories -X theirs --no-edit
+#      - name: next build
+#        run: cd /home/habe/yokai-ui/ && npm run build
+#      - name: next start
+#        continue-on-error: true
+#        run: cd /home/habe/yokai-ui/ && nohup npm run start &
+#      passphrase: ${{ secrets.HOST_SSHKEYPASSWORD }}
+#      password: ${{ secrets.HOST_PASSWORD }}
+#      git reset --soft
+#      git checkout HEAD -- .
+#
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.HOST_USERNAME }}
+          key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
+          script: |
+            sudo su
+            cd /home/habe/yokai-ui/
+            pm2 stop npm
+            git checkout deploy
+            git reset --hard
+            git checkout main
+            git branch -D deploy 
+            git checkout deploy
+            sudo chmod -R 777 .
+            git stash
+            git pull --allow-unrelated-histories -X theirs --no-edit
+            npm i
+            sudo npm run build
+            pm2 start npm -- start
